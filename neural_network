@@ -1,0 +1,97 @@
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import fetch_openml
+import time
+from keras.utils import to_categorical
+
+x, y = fetch_openml('mnist_784', version=1, return_X_y=True)
+x = (x/255).astype('float32')
+y = to_categorical(y)
+
+x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.15, random_state=42)
+
+def initialize():
+    pass
+
+
+class NeuralNetwork:
+
+    def __init__(self):
+        np.random.seed(1)
+
+        self.syn_weights = 2 * np.random.random((self.col_count(training_inputs), len(training_inputs))) - 1
+        self.syn_weights1 = 2 * np.random.random((len(training_inputs), 1)) - 1
+
+    def col_count(self, matrix):
+        count = 0
+        for it in matrix[0]:
+            count += 1
+        return count
+
+    def sigmoid(self, x):
+        return 1 / (1 + np.exp(-x))
+
+    def sigmoid_deriv(self, x):
+        return x * (1 - x)
+
+    def train(self, input_layer, trn_outputs, training_iterations):
+        for iteration in range(training_iterations):
+
+            layer1 = self.hidden_layer_1(input_layer)
+            layer2 = self.hidden_layer_2(layer1)
+            error = trn_outputs - layer2
+            adjustments = error * self.sigmoid_deriv(layer2)
+            layer1_error = adjustments.dot(self.syn_weights1.T)
+            layer1_adj = layer1_error * self.sigmoid_deriv(layer1)
+            self.syn_weights += np.dot(input_layer.T, layer1_adj)
+            self.syn_weights1 += layer1.T.dot(adjustments)
+        return layer2
+
+    def test(self, inputs):
+        layer1 = self.hidden_layer_1(inputs)
+        output = self.hidden_layer_2(layer1)
+        return output
+
+    def hidden_layer_1(self, input1):
+        layer1 = self.sigmoid(np.dot(input1, self.syn_weights))
+
+        return layer1
+
+    def hidden_layer_2(self, input2):
+        layer2 = self.sigmoid(np.dot(input2, self.syn_weights1))
+
+        return layer2
+
+
+if __name__ == "__main__":
+
+    # print(neural_network.syn_weights)
+
+    training_inputs = np.array([[0, 0, 1],
+                                [0, 0, 0],
+                                [1, 0, 0],
+                                [1, 1, 1],
+                                [1, 1, 0]])
+    training_outputs = np.array([[0],
+                                 [1],
+                                 [1],
+                                 [0],
+                                 [1]])
+    print(f'synaptic weights before training: ')
+    neural_network = NeuralNetwork()
+
+    print(f'Training Inputs:\n{training_inputs} \nTraining Outputs:\n{training_outputs}')
+    # print(f'Weights: \n{neural_network.syn_weights}')
+    # print(f'Weights 1: \n{neural_network.syn_weights1}')
+
+    print(f'Output: {neural_network.train(training_inputs, training_outputs, 10000)}')
+
+    print(f'Synaptic weights after training: \n{neural_network.syn_weights}\nSynaptic weights 1 after training: \n{neural_network.syn_weights1}')
+
+    A = int(input("Input 1: "))
+    B = int(input("Input 2: "))
+    C = int(input("Input 3: "))
+
+    user_array = np.array([A,B,C])
+    print(user_array)
+    print(f'Output of new scenario: \n{neural_network.test(user_array)}')
