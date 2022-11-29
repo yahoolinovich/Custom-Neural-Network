@@ -1,32 +1,31 @@
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.datasets import fetch_openml
-import time
-from keras.utils import to_categorical
+from keras.datasets import mnist
 
-x, y = fetch_openml('mnist_784', version=1, return_X_y=True)
-x = (x/255).astype('float32')
-y = to_categorical(y)
 
-x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.15, random_state=42)
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+lst = []
+num_of_training_inputs = 200
 
-def initialize():
-    pass
+for number in range(len(x_train[0:num_of_training_inputs])):
+    x = []
+    for col in x_train[number]:
+        for i in col:
+            x.append(i)
+    lst.append(x)
+
+training_inputs = (np.array(lst) / 255.0 * 0.99) + 0.01 # 200 x 784
+training_outputs = np.vstack(y_train[:num_of_training_inputs])
+normalized_outputs = np.zeros((num_of_training_inputs,10)) + 0.01
+for index, i in enumerate(normalized_outputs):
+    i[training_outputs[index]] = 0.99
 
 
 class NeuralNetwork:
 
     def __init__(self):
         np.random.seed(1)
-
-        self.syn_weights = 2 * np.random.random((self.col_count(training_inputs), len(training_inputs))) - 1
-        self.syn_weights1 = 2 * np.random.random((len(training_inputs), 1)) - 1
-
-    def col_count(self, matrix):
-        count = 0
-        for it in matrix[0]:
-            count += 1
-        return count
+        self.syn_weights = 2 * np.random.random((len(training_inputs), len(training_inputs[0]))) - 1 # 200 x 784
+        self.syn_weights1 = 2 * np.random.random((10, len(training_inputs))) - 1 # 10 x 200
 
     def sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
@@ -34,64 +33,62 @@ class NeuralNetwork:
     def sigmoid_deriv(self, x):
         return x * (1 - x)
 
-    def train(self, input_layer, trn_outputs, training_iterations):
-        for iteration in range(training_iterations):
+    def learn(self, input, out, iterations):
+        for i in range(iterations):
+            print(f'Processing {i}th iteration')
+            for index, data in enumerate(input):
+                self.train(np.vstack(data),np.vstack(out[index]))
 
-            layer1 = self.hidden_layer_1(input_layer)
-            layer2 = self.hidden_layer_2(layer1)
-            error = trn_outputs - layer2
-            adjustments = error * self.sigmoid_deriv(layer2)
-            layer1_error = adjustments.dot(self.syn_weights1.T)
-            layer1_adj = layer1_error * self.sigmoid_deriv(layer1)
-            self.syn_weights += np.dot(input_layer.T, layer1_adj)
-            self.syn_weights1 += layer1.T.dot(adjustments)
-        return layer2
+    def train(self, input_layer, trn_outputs):
+        layer1 = self.hidden_layer_1(input_layer) #
+        layer2 = self.hidden_layer_2(layer1) #
 
-    def test(self, inputs):
-        layer1 = self.hidden_layer_1(inputs)
-        output = self.hidden_layer_2(layer1)
-        return output
+        error = trn_outputs - layer2 #
+
+        adjustments = error * self.sigmoid_deriv(layer2)
+        layer1_error = np.dot(self.syn_weights1.T, adjustments)
+        layer1_adj = layer1_error * self.sigmoid_deriv(layer1)
+        self.syn_weights += np.dot(layer1_adj, input_layer.T)
+        self.syn_weights1 += np.dot(adjustments,layer1.T)
 
     def hidden_layer_1(self, input1):
-        layer1 = self.sigmoid(np.dot(input1, self.syn_weights))
+        layer1 = self.sigmoid(np.dot(self.syn_weights,input1))
 
         return layer1
 
     def hidden_layer_2(self, input2):
-        layer2 = self.sigmoid(np.dot(input2, self.syn_weights1))
+        layer2 = self.sigmoid(np.dot(self.syn_weights1,input2))
 
         return layer2
 
 
 if __name__ == "__main__":
-
-    # print(neural_network.syn_weights)
-
-    training_inputs = np.array([[0, 0, 1],
-                                [0, 0, 0],
-                                [1, 0, 0],
-                                [1, 1, 1],
-                                [1, 1, 0]])
-    training_outputs = np.array([[0],
-                                 [1],
-                                 [1],
-                                 [0],
-                                 [1]])
-    print(f'synaptic weights before training: ')
     neural_network = NeuralNetwork()
 
-    print(f'Training Inputs:\n{training_inputs} \nTraining Outputs:\n{training_outputs}')
-    # print(f'Weights: \n{neural_network.syn_weights}')
-    # print(f'Weights 1: \n{neural_network.syn_weights1}')
+    print(f'Output: {neural_network.learn(training_inputs, normalized_outputs, 100)}')
 
-    print(f'Output: {neural_network.train(training_inputs, training_outputs, 10000)}')
+    print(f'Synaptic weights after training: \n{neural_network.syn_weights}\nSynaptic weights 1 after training: \n{neural_network.syn_weights1}\n\n\n')
 
-    print(f'Synaptic weights after training: \n{neural_network.syn_weights}\nSynaptic weights 1 after training: \n{neural_network.syn_weights1}')
 
-    A = int(input("Input 1: "))
-    B = int(input("Input 2: "))
-    C = int(input("Input 3: "))
+    def test_database(num):
+        c = []
+        for col in x_test[num]:
+            for i in col:
+                c.append(i)
+        input = (np.array(c) / 255.0 * 0.99) + 0.01
+        hidden1 = neural_network.hidden_layer_1(input)
+        hidden2 = neural_network.hidden_layer_2(hidden1)
+        result = np.argmax(hidden2)
+        actual_value = y_test[num]
+        if result == actual_value:
+            return True
+        else:
+            return False
 
-    user_array = np.array([A,B,C])
-    print(user_array)
-    print(f'Output of new scenario: \n{neural_network.test(user_array)}')
+    total_test_passes = 0
+    correct_count = 0
+    for i in range(len(x_test)):
+        if test_database(i) == True:
+            correct_count += 1
+        total_test_passes += 1
+    print(f'{correct_count}/{total_test_passes}\n\nTest Accuracy: {correct_count/total_test_passes}')
