@@ -4,6 +4,7 @@ from keras.datasets import mnist
 
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 lst = []
+
 num_of_training_inputs = 200
 
 for number in range(len(x_train[0:num_of_training_inputs])):
@@ -48,17 +49,16 @@ class NeuralNetwork:
         adjustments = error * self.sigmoid_deriv(layer2)
         layer1_error = np.dot(self.syn_weights1.T, adjustments)
         layer1_adj = layer1_error * self.sigmoid_deriv(layer1)
+        
         self.syn_weights += np.dot(layer1_adj, input_layer.T)
         self.syn_weights1 += np.dot(adjustments,layer1.T)
 
     def hidden_layer_1(self, input1):
         layer1 = self.sigmoid(np.dot(self.syn_weights,input1))
-
         return layer1
 
     def hidden_layer_2(self, input2):
         layer2 = self.sigmoid(np.dot(self.syn_weights1,input2))
-
         return layer2
 
 
