@@ -1,5 +1,5 @@
 # Custom Neural Network
-A Neural Network made completely from scratch with Numpy that is training on the MNIST database.
+A Neural Network made completely from scratch with Numpy that is trained on the MNIST database.
 
 ![download](https://github.com/yahoolinovich/custom_nn_MNIST/assets/106834198/aee9839c-cbdc-430c-9181-0191078211e0)
 
